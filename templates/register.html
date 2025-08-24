@@ -60,13 +60,13 @@
                     
                     <div class="mb-4">
                         <label for="product_key" class="form-label">
-                            <i class="fas fa-key me-1"></i>Product Key *
+                            <i class="fas fa-key me-1"></i>Product Key (Opcional)
                         </label>
-                        <input type="text" class="form-control" id="product_key" name="product_key" required
-                               placeholder="Digite sua Product Key" maxlength="16" style="text-transform: uppercase;">
+                        <input type="text" class="form-control" id="product_key" name="product_key"
+                               placeholder="Digite sua Product Key (pode ser adicionada depois)" maxlength="16" style="text-transform: uppercase;">
                         <div class="form-text">
                             <i class="fas fa-info-circle text-primary me-1"></i>
-                            Chave de 16 caracteres fornecida na compra do plano
+                            Você pode criar sua conta sem Product Key e adicionar uma depois para acessar as funcionalidades
                         </div>
                     </div>
                     
@@ -171,8 +171,8 @@
                 return;
             }
             
-            // Validar product key
-            if (productKey.length !== 16) {
+            // Validar product key (apenas se foi fornecida)
+            if (productKey && productKey.length !== 16) {
                 e.preventDefault();
                 showNotification('Product Key deve ter 16 caracteres!', 'danger');
                 return;

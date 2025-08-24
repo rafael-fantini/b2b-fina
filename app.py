@@ -199,7 +199,7 @@ def register():
         username = request.form['username']
         email = request.form['email']
         password = request.form['password']
-        product_key = request.form['product_key']
+        product_key = request.form.get('product_key', '').strip()
         
         # Verificar se usuário já existe
         if User.query.filter_by(username=username).first():
@@ -210,11 +210,12 @@ def register():
             flash('Email já está em uso!', 'error')
             return render_template('register.html')
         
-        # Verificar product key
-        key = ProductKey.query.filter_by(key_value=product_key, user_id=None).first()
-        if not key:
-            flash('Product Key inválida ou já utilizada!', 'error')
-            return render_template('register.html')
+        # Verificar product key (apenas se foi fornecida)
+        if product_key:
+            key = ProductKey.query.filter_by(key_value=product_key, user_id=None).first()
+            if not key:
+                flash('Product Key inválida ou já utilizada!', 'error')
+                return render_template('register.html')
         
         # Criar usuário
         user = User(
@@ -225,12 +226,17 @@ def register():
         db.session.add(user)
         db.session.commit()
         
-        # Ativar product key
-        key.user_id = user.id
-        key.activated_at = datetime.utcnow()
-        db.session.commit()
+        # Ativar product key se foi fornecida
+        if product_key:
+            key = ProductKey.query.filter_by(key_value=product_key, user_id=None).first()
+            if key:
+                key.user_id = user.id
+                key.activated_at = datetime.utcnow()
+                db.session.commit()
+            flash('Cadastro realizado com sucesso! Product Key ativada.', 'success')
+        else:
+            flash('Cadastro realizado com sucesso! Adicione uma Product Key no dashboard para acessar as funcionalidades.', 'info')
         
-        flash('Cadastro realizado com sucesso!', 'success')
         return redirect(url_for('login'))
     
     return render_template('register.html')
@@ -282,6 +288,18 @@ def generate_keys():
 def filter_page():
     if 'user_id' not in session:
         return redirect(url_for('login'))
+    
+    # Verificar se usuário tem Product Key ativa
+    user_id = session['user_id']
+    product_key = ProductKey.query.filter_by(user_id=user_id).first()
+    
+    if not product_key:
+        flash('Para acessar os filtros, você precisa de uma Product Key ativa. Adicione uma no dashboard.', 'warning')
+        return redirect(url_for('index'))
+    
+    if product_key.remaining_leads <= 0:
+        flash('Seus leads acabaram! Adicione uma nova Product Key para continuar.', 'warning')
+        return redirect(url_for('index'))
     
     db_path = get_current_database()
     columns = get_table_columns(db_path)
@@ -460,6 +478,16 @@ def dashboard_stats():
 def preview_data():
     if 'user_id' not in session:
         return jsonify({'error': 'Não autorizado'}), 401
+    
+    # Verificar se usuário tem Product Key ativa
+    user_id = session['user_id']
+    product_key = ProductKey.query.filter_by(user_id=user_id).first()
+    
+    if not product_key:
+        return jsonify({'error': 'Product Key necessária para fazer pesquisas'}), 403
+    
+    if product_key.remaining_leads <= 0:
+        return jsonify({'error': 'Leads insuficientes. Adicione uma nova Product Key.'}), 403
     
     data = request.get_json()
     filters = data.get('filters', {})

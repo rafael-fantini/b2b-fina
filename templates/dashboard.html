@@ -68,7 +68,7 @@
                 <div class="row">
                     <div class="col-md-4 mb-3">
                         <div class="d-grid">
-                            <a href="{{ url_for('filter_page') }}" class="btn btn-primary btn-lg">
+                            <a href="{{ url_for('filter_page') }}" class="btn btn-primary btn-lg" id="filterBtn">
                                 <i class="fas fa-filter me-2"></i>Filtrar e Exportar
                             </a>
                         </div>
@@ -208,14 +208,17 @@
     
     <!-- Card para Adicionar Product Key -->
     <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
+        <div class="card" id="addKeyCard">
+            <div class="card-header" id="addKeyHeader">
                 <h6 class="mb-0">
-                    <i class="fas fa-plus-circle me-2"></i>Adicionar Mais Leads
+                    <i class="fas fa-plus-circle me-2"></i>
+                    <span id="addKeyTitle">Adicionar Mais Leads</span>
                 </h6>
             </div>
             <div class="card-body">
-                <p class="text-muted mb-3">Adicione uma nova Product Key para aumentar seus leads:</p>
+                <p class="text-muted mb-3" id="addKeyDescription">
+                    Adicione uma nova Product Key para aumentar seus leads:
+                </p>
                 
                 <div class="mb-3">
                     <label for="newProductKey" class="form-label">
@@ -228,11 +231,12 @@
                 
                 <div class="d-grid">
                     <button class="btn btn-success" id="addKeyBtn">
-                        <i class="fas fa-plus me-2"></i>Adicionar Leads
+                        <i class="fas fa-plus me-2"></i>
+                        <span id="addKeyBtnText">Adicionar Leads</span>
                     </button>
                 </div>
                 
-                <div class="mt-3">
+                <div class="mt-3" id="addKeyHelpText">
                     <div class="alert alert-info py-2">
                         <small>
                             <i class="fas fa-lightbulb me-1"></i>
@@ -312,29 +316,183 @@
     }
     
     function updateStats(data) {
-        document.getElementById('leadsRemaining').textContent = data.leads_remaining || 0;
+        const leadsRemaining = data.leads_remaining || 0;
+        const totalLeads = data.total_leads || 0;
+        const hasActiveKey = totalLeads > 0;
+        
+        document.getElementById('leadsRemaining').textContent = leadsRemaining;
         document.getElementById('totalExports').textContent = data.exports_today || 0;
         document.getElementById('totalCompanies').textContent = data.total_companies || 0;
         document.getElementById('savedFilters').textContent = data.saved_filters || 0;
         
-        // Atualizar informações do plano
-        const planType = data.plan_type || 'Básico';
-        const totalLeads = data.total_leads || 1000;
-        const usedLeads = totalLeads - (data.leads_remaining || 0);
-        const percentage = Math.round((usedLeads / totalLeads) * 100);
+        // Atualizar interface baseada na presença de Product Key
+        updateUIBasedOnProductKey(hasActiveKey, leadsRemaining, totalLeads, data);
+        updateAddKeyCard(hasActiveKey, leadsRemaining);
+    }
+    
+    function updateUIBasedOnProductKey(hasActiveKey, leadsRemaining, totalLeads, data) {
+        const filterBtn = document.getElementById('filterBtn');
+        const quickExportBtn = document.getElementById('quickExportBtn');
+        const statsBtn = document.getElementById('statsBtn');
         
-        document.getElementById('planType').textContent = `${planType} (${totalLeads} leads)`;
-        document.getElementById('leadsProgress').textContent = `${percentage}%`;
-        document.getElementById('leadsProgressBar').style.width = `${percentage}%`;
-        
-        // Mudar cor da barra conforme o uso
-        const progressBar = document.getElementById('leadsProgressBar');
-        if (percentage > 80) {
-            progressBar.className = 'progress-bar bg-danger';
-        } else if (percentage > 60) {
-            progressBar.className = 'progress-bar bg-warning';
+        if (!hasActiveKey) {
+            // Sem Product Key - desabilitar funcionalidades
+            filterBtn.href = '#';
+            filterBtn.classList.remove('btn-primary');
+            filterBtn.classList.add('btn-secondary');
+            filterBtn.innerHTML = '<i class="fas fa-lock me-2"></i>Product Key Necessária';
+            filterBtn.onclick = function(e) {
+                e.preventDefault();
+                showNotification('Adicione uma Product Key para acessar os filtros!', 'warning');
+            };
+            
+            quickExportBtn.disabled = true;
+            quickExportBtn.classList.remove('btn-success');
+            quickExportBtn.classList.add('btn-secondary');
+            quickExportBtn.innerHTML = '<i class="fas fa-lock me-2"></i>Product Key Necessária';
+            
+            document.getElementById('planType').textContent = 'Nenhuma Product Key ativa';
+            document.getElementById('leadsProgress').textContent = '0%';
+            document.getElementById('leadsProgressBar').style.width = '0%';
+            document.getElementById('leadsProgressBar').className = 'progress-bar bg-secondary';
+            
+        } else if (leadsRemaining <= 0) {
+            // Product Key sem leads
+            filterBtn.href = '#';
+            filterBtn.classList.remove('btn-primary');
+            filterBtn.classList.add('btn-warning');
+            filterBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Leads Esgotados';
+            filterBtn.onclick = function(e) {
+                e.preventDefault();
+                showNotification('Seus leads acabaram! Adicione uma nova Product Key.', 'warning');
+            };
+            
+            quickExportBtn.disabled = true;
+            quickExportBtn.classList.remove('btn-success');
+            quickExportBtn.classList.add('btn-warning');
+            quickExportBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Leads Esgotados';
+            
+            // Atualizar informações do plano
+            const planType = data.plan_type || 'Básico';
+            const usedLeads = totalLeads;
+            const percentage = 100;
+            
+            document.getElementById('planType').textContent = `${planType} (${totalLeads} leads)`;
+            document.getElementById('leadsProgress').textContent = `${percentage}%`;
+            document.getElementById('leadsProgressBar').style.width = `${percentage}%`;
+            document.getElementById('leadsProgressBar').className = 'progress-bar bg-danger';
+            
         } else {
-            progressBar.className = 'progress-bar bg-success';
+            // Product Key ativa com leads
+            filterBtn.href = '/filter';
+            filterBtn.classList.remove('btn-secondary', 'btn-warning');
+            filterBtn.classList.add('btn-primary');
+            filterBtn.innerHTML = '<i class="fas fa-filter me-2"></i>Filtrar e Exportar';
+            filterBtn.onclick = null;
+            
+            quickExportBtn.disabled = false;
+            quickExportBtn.classList.remove('btn-secondary', 'btn-warning');
+            quickExportBtn.classList.add('btn-success');
+            quickExportBtn.innerHTML = '<i class="fas fa-download me-2"></i>Export Rápido';
+            
+            // Atualizar informações do plano
+            const planType = data.plan_type || 'Básico';
+            const usedLeads = totalLeads - leadsRemaining;
+            const percentage = Math.round((usedLeads / totalLeads) * 100);
+            
+            document.getElementById('planType').textContent = `${planType} (${totalLeads} leads)`;
+            document.getElementById('leadsProgress').textContent = `${percentage}%`;
+            document.getElementById('leadsProgressBar').style.width = `${percentage}%`;
+            
+            // Mudar cor da barra conforme o uso
+            const progressBar = document.getElementById('leadsProgressBar');
+            if (percentage > 80) {
+                progressBar.className = 'progress-bar bg-danger';
+            } else if (percentage > 60) {
+                progressBar.className = 'progress-bar bg-warning';
+            } else {
+                progressBar.className = 'progress-bar bg-success';
+            }
+        }
+    }
+    
+    function updateAddKeyCard(hasActiveKey, leadsRemaining) {
+        const addKeyCard = document.getElementById('addKeyCard');
+        const addKeyHeader = document.getElementById('addKeyHeader');
+        const addKeyTitle = document.getElementById('addKeyTitle');
+        const addKeyDescription = document.getElementById('addKeyDescription');
+        const addKeyBtnText = document.getElementById('addKeyBtnText');
+        const addKeyHelpText = document.getElementById('addKeyHelpText');
+        
+        if (!hasActiveKey) {
+            // Sem Product Key - destacar como urgente
+            addKeyCard.style.border = '2px solid #dc3545';
+            addKeyCard.style.boxShadow = '0 0 20px rgba(220, 53, 69, 0.3)';
+            addKeyHeader.style.background = 'linear-gradient(135deg, #dc3545, #c82333)';
+            addKeyTitle.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>Product Key Necessária!';
+            addKeyDescription.innerHTML = '<strong class="text-danger">Você precisa de uma Product Key para acessar as funcionalidades do sistema:</strong>';
+            addKeyBtnText.textContent = 'Ativar Product Key';
+            
+            addKeyHelpText.innerHTML = `
+                <div class="alert alert-warning py-2">
+                    <small>
+                        <i class="fas fa-info-circle me-1"></i>
+                        <strong>Sem Product Key você não pode:</strong> Fazer pesquisas, usar filtros ou exportar dados
+                    </small>
+                </div>
+                <div class="alert alert-info py-2">
+                    <small>
+                        <i class="fas fa-lightbulb me-1"></i>
+                        <strong>Dica:</strong> Acesse o painel admin para gerar Product Keys de teste
+                    </small>
+                </div>
+            `;
+            
+        } else if (leadsRemaining <= 0) {
+            // Product Key sem leads - destacar como aviso
+            addKeyCard.style.border = '2px solid #ffc107';
+            addKeyCard.style.boxShadow = '0 0 20px rgba(255, 193, 7, 0.3)';
+            addKeyHeader.style.background = 'linear-gradient(135deg, #ffc107, #e0a800)';
+            addKeyTitle.innerHTML = '<i class="fas fa-battery-empty me-1"></i>Leads Esgotados!';
+            addKeyDescription.innerHTML = '<strong class="text-warning">Seus leads acabaram! Adicione uma nova Product Key para continuar:</strong>';
+            addKeyBtnText.textContent = 'Recarregar Leads';
+            
+            addKeyHelpText.innerHTML = `
+                <div class="alert alert-warning py-2">
+                    <small>
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        <strong>Sem leads você não pode:</strong> Fazer novas pesquisas ou exportações
+                    </small>
+                </div>
+                <div class="alert alert-info py-2">
+                    <small>
+                        <i class="fas fa-lightbulb me-1"></i>
+                        <strong>Dica:</strong> Acesse o painel admin para gerar Product Keys de teste
+                    </small>
+                </div>
+            `;
+            
+        } else {
+            // Product Key ativa - visual normal
+            addKeyCard.style.border = '';
+            addKeyCard.style.boxShadow = '';
+            addKeyHeader.style.background = '';
+            addKeyTitle.innerHTML = 'Adicionar Mais Leads';
+            addKeyDescription.textContent = 'Adicione uma nova Product Key para aumentar seus leads:';
+            addKeyBtnText.textContent = 'Adicionar Leads';
+            
+            addKeyHelpText.innerHTML = `
+                <div class="alert alert-info py-2">
+                    <small>
+                        <i class="fas fa-lightbulb me-1"></i>
+                        <strong>Dica:</strong> Acesse o painel admin para gerar Product Keys de teste
+                    </small>
+                </div>
+                <small class="text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Os leads serão somados ao seu plano atual automaticamente
+                </small>
+            `;
         }
     }
     
