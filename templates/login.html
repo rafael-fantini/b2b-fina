@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Sistema B2B{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="card">
+            <div class="card-header text-center">
+                <h4 class="mb-0">
+                    <i class="fas fa-sign-in-alt me-2"></i>Entrar no Sistema
+                </h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" id="loginForm">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">
+                            <i class="fas fa-user me-1"></i>Nome de Usuário
+                        </label>
+                        <input type="text" class="form-control" id="username" name="username" required 
+                               placeholder="Digite seu nome de usuário">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="password" class="form-label">
+                            <i class="fas fa-lock me-1"></i>Senha
+                        </label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="password" name="password" required
+                                   placeholder="Digite sua senha">
+                            <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg" id="loginBtn">
+                            <i class="fas fa-sign-in-alt me-2"></i>Entrar
+                        </button>
+                    </div>
+                </form>
+                
+                <hr class="my-4">
+                
+                <div class="text-center">
+                    <p class="text-muted">Não tem uma conta?</p>
+                    <a href="{{ url_for('register') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-user-plus me-2"></i>Criar Conta
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Informações de Login de Demonstração -->
+        <div class="card mt-4">
+            <div class="card-body">
+                <h6 class="text-center mb-3">
+                    <i class="fas fa-info-circle text-primary me-2"></i>Login de Demonstração
+                </h6>
+                <div class="row text-center">
+                    <div class="col-12">
+                        <small class="text-muted">
+                            <strong>Admin:</strong> admin / admin123
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Toggle password visibility
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordField = document.getElementById('password');
+        
+        togglePassword.addEventListener('click', function() {
+            const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordField.setAttribute('type', type);
+            
+            const icon = this.querySelector('i');
+            icon.className = type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
+        });
+        
+        // Form submission
+        const loginForm = document.getElementById('loginForm');
+        const loginBtn = document.getElementById('loginBtn');
+        
+        loginForm.addEventListener('submit', function(e) {
+            const originalText = showLoading(loginBtn);
+            
+            // Se houver erro, o servidor vai recarregar a página com a mensagem de erro
+            // Então não precisamos esconder o loading aqui
+        });
+        
+        // Auto focus no primeiro campo
+        document.getElementById('username').focus();
+        
+        // Enter para submeter
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                loginForm.submit();
+            }
+        });
+    });
+</script>
+{% endblock %}

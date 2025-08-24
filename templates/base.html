@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sistema B2B{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --light-bg: #ecf0f1;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar-brand {
+            font-weight: bold;
+            color: var(--primary-color) !important;
+        }
+
+        .main-content {
+            margin-top: 80px;
+            padding: 20px 0;
+        }
+
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            border: none;
+            padding: 1.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--secondary-color), #2980b9);
+            border: none;
+            border-radius: 25px;
+            padding: 10px 25px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+            background: linear-gradient(135deg, #2980b9, var(--secondary-color));
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success-color), #229954);
+            border: none;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(39, 174, 96, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--accent-color), #c0392b);
+            border: none;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, var(--warning-color), #d68910);
+            border: none;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control {
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+
+        .alert {
+            border-radius: 10px;
+            border: none;
+            margin-bottom: 20px;
+        }
+
+        .stats-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .stats-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        .stats-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .filter-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .filters-container {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(52, 152, 219, 0.3) transparent;
+        }
+
+        .filters-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .filters-container::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 3px;
+        }
+
+        .filters-container::-webkit-scrollbar-thumb {
+            background: rgba(52, 152, 219, 0.3);
+            border-radius: 3px;
+            transition: all 0.3s ease;
+        }
+
+        .filters-container::-webkit-scrollbar-thumb:hover {
+            background: rgba(52, 152, 219, 0.6);
+        }
+
+        .sticky-bottom {
+            position: sticky;
+            bottom: 0;
+            z-index: 10;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            margin: 0 -10px -1.5rem -1.5rem;
+            padding: 1rem 1.5rem !important;
+        }
+
+        @media (max-width: 991.98px) {
+            .filter-section {
+                position: relative !important;
+                top: auto !important;
+                margin-bottom: 1rem;
+                padding: 1rem;
+            }
+            
+            .filters-container {
+                max-height: 50vh !important;
+            }
+        }
+
+        @media (max-width: 767.98px) {
+            .filters-container {
+                max-height: 40vh !important;
+            }
+            
+            .filter-section {
+                padding: 0.75rem;
+            }
+        }
+
+        .saved-filters-container {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(52, 152, 219, 0.3) transparent;
+        }
+
+        .saved-filters-container::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .saved-filters-container::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 2px;
+        }
+
+        .saved-filters-container::-webkit-scrollbar-thumb {
+            background: rgba(52, 152, 219, 0.3);
+            border-radius: 2px;
+        }
+
+        .saved-filters-container::-webkit-scrollbar-thumb:hover {
+            background: rgba(52, 152, 219, 0.6);
+        }
+
+        .table {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .table thead th {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            padding: 1rem;
+        }
+
+        .table tbody tr:hover {
+            background-color: rgba(52, 152, 219, 0.1);
+        }
+
+        .navbar-toggler {
+            border: none;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .navbar-toggler:focus {
+            box-shadow: none;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                margin-top: 70px;
+                padding: 10px;
+            }
+            
+            .card {
+                margin-bottom: 15px;
+            }
+            
+            .stats-card {
+                padding: 1rem;
+                margin-bottom: 15px;
+            }
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="fas fa-chart-line me-2"></i>Sistema B2B
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    {% if session.user_id %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('index') }}">
+                                <i class="fas fa-home me-1"></i>Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('filter_page') }}">
+                                <i class="fas fa-filter me-1"></i>Filtros
+                            </a>
+                        </li>
+                        {% if session.is_admin %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                                <i class="fas fa-cog me-1"></i>Admin
+                            </a>
+                        </li>
+                        {% endif %}
+                    {% endif %}
+                </ul>
+                
+                <ul class="navbar-nav">
+                    {% if session.user_id %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                <i class="fas fa-user me-1"></i>{{ session.username }}
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{ url_for('logout') }}">
+                                    <i class="fas fa-sign-out-alt me-1"></i>Sair
+                                </a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('login') }}">
+                                <i class="fas fa-sign-in-alt me-1"></i>Entrar
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('register') }}">
+                                <i class="fas fa-user-plus me-1"></i>Cadastrar
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                            <i class="fas fa-{{ 'exclamation-circle' if category == 'error' else 'check-circle' if category == 'success' else 'info-circle' }} me-2"></i>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JavaScript -->
+    <script>
+        // Função para mostrar loading
+        function showLoading(element) {
+            const originalText = element.innerHTML;
+            element.innerHTML = '<span class="loading"></span> Carregando...';
+            element.disabled = true;
+            return originalText;
+        }
+
+        function hideLoading(element, originalText) {
+            element.innerHTML = originalText;
+            element.disabled = false;
+        }
+
+        // Função para mostrar notificações
+        function showNotification(message, type = 'success') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            const container = document.querySelector('.container');
+            container.insertBefore(alertDiv, container.firstChild);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+
+        // Animação fade-in para elementos
+        document.addEventListener('DOMContentLoaded', function() {
+            const elements = document.querySelectorAll('.card, .stats-card');
+            elements.forEach((el, index) => {
+                setTimeout(() => {
+                    el.classList.add('fade-in');
+                }, index * 100);
+            });
+        });
+
+        // Confirmar ações perigosas
+        function confirmAction(message = 'Tem certeza que deseja continuar?') {
+            return confirm(message);
+        }
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

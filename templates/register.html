@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block title %}Cadastro - Sistema B2B{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-header text-center">
+                <h4 class="mb-0">
+                    <i class="fas fa-user-plus me-2"></i>Criar Nova Conta
+                </h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" id="registerForm">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">
+                            <i class="fas fa-user me-1"></i>Nome de Usuário *
+                        </label>
+                        <input type="text" class="form-control" id="username" name="username" required 
+                               placeholder="Digite seu nome de usuário">
+                        <div class="form-text">Escolha um nome único para sua conta</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="email" class="form-label">
+                            <i class="fas fa-envelope me-1"></i>Email *
+                        </label>
+                        <input type="email" class="form-control" id="email" name="email" required
+                               placeholder="Digite seu email">
+                        <div class="form-text">Será usado para recuperação de senha</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="password" class="form-label">
+                            <i class="fas fa-lock me-1"></i>Senha *
+                        </label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="password" name="password" required
+                                   placeholder="Digite sua senha" minlength="6">
+                            <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">Mínimo de 6 caracteres</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="confirm_password" class="form-label">
+                            <i class="fas fa-lock me-1"></i>Confirmar Senha *
+                        </label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" required
+                                   placeholder="Confirme sua senha" minlength="6">
+                            <button class="btn btn-outline-secondary" type="button" id="toggleConfirmPassword">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="product_key" class="form-label">
+                            <i class="fas fa-key me-1"></i>Product Key *
+                        </label>
+                        <input type="text" class="form-control" id="product_key" name="product_key" required
+                               placeholder="Digite sua Product Key" maxlength="16" style="text-transform: uppercase;">
+                        <div class="form-text">
+                            <i class="fas fa-info-circle text-primary me-1"></i>
+                            Chave de 16 caracteres fornecida na compra do plano
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success btn-lg" id="registerBtn">
+                            <i class="fas fa-user-plus me-2"></i>Criar Conta
+                        </button>
+                    </div>
+                </form>
+                
+                <hr class="my-4">
+                
+                <div class="text-center">
+                    <p class="text-muted">Já tem uma conta?</p>
+                    <a href="{{ url_for('login') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-sign-in-alt me-2"></i>Fazer Login
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Informações sobre Product Keys -->
+        <div class="card mt-4">
+            <div class="card-body">
+                <h6 class="text-center mb-3">
+                    <i class="fas fa-info-circle text-primary me-2"></i>Planos Disponíveis
+                </h6>
+                <div class="row text-center">
+                    <div class="col-6 col-md-3">
+                        <div class="border rounded p-2 mb-2">
+                            <strong>1.000</strong><br>
+                            <small class="text-muted">Leads</small>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="border rounded p-2 mb-2">
+                            <strong>2.000</strong><br>
+                            <small class="text-muted">Leads</small>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="border rounded p-2 mb-2">
+                            <strong>10.000</strong><br>
+                            <small class="text-muted">Leads</small>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="border rounded p-2 mb-2">
+                            <strong>50.000</strong><br>
+                            <small class="text-muted">Leads</small>
+                        </div>
+                    </div>
+                </div>
+                <small class="text-muted d-block text-center mt-2">
+                    Cada linha exportada consome 1 lead do seu plano
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Toggle password visibility
+        function setupPasswordToggle(toggleId, passwordId) {
+            const toggle = document.getElementById(toggleId);
+            const password = document.getElementById(passwordId);
+            
+            toggle.addEventListener('click', function() {
+                const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+                password.setAttribute('type', type);
+                
+                const icon = this.querySelector('i');
+                icon.className = type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
+            });
+        }
+        
+        setupPasswordToggle('togglePassword', 'password');
+        setupPasswordToggle('toggleConfirmPassword', 'confirm_password');
+        
+        // Product key formatting
+        const productKeyInput = document.getElementById('product_key');
+        productKeyInput.addEventListener('input', function() {
+            this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        });
+        
+        // Form validation
+        const registerForm = document.getElementById('registerForm');
+        const registerBtn = document.getElementById('registerBtn');
+        
+        registerForm.addEventListener('submit', function(e) {
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+            const productKey = document.getElementById('product_key').value;
+            
+            // Validar senhas
+            if (password !== confirmPassword) {
+                e.preventDefault();
+                showNotification('As senhas não coincidem!', 'danger');
+                return;
+            }
+            
+            // Validar product key
+            if (productKey.length !== 16) {
+                e.preventDefault();
+                showNotification('Product Key deve ter 16 caracteres!', 'danger');
+                return;
+            }
+            
+            const originalText = showLoading(registerBtn);
+        });
+        
+        // Auto focus no primeiro campo
+        document.getElementById('username').focus();
+        
+        // Validação em tempo real das senhas
+        const passwordField = document.getElementById('password');
+        const confirmPasswordField = document.getElementById('confirm_password');
+        
+        function validatePasswords() {
+            if (confirmPasswordField.value && passwordField.value !== confirmPasswordField.value) {
+                confirmPasswordField.setCustomValidity('As senhas não coincidem');
+                confirmPasswordField.classList.add('is-invalid');
+            } else {
+                confirmPasswordField.setCustomValidity('');
+                confirmPasswordField.classList.remove('is-invalid');
+            }
+        }
+        
+        passwordField.addEventListener('input', validatePasswords);
+        confirmPasswordField.addEventListener('input', validatePasswords);
+    });
+</script>
+{% endblock %}

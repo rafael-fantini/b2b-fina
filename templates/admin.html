@@ -1,0 +1,509 @@
+{% extends "base.html" %}
+
+{% block title %}Painel Administrativo - Sistema B2B{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="text-center mb-0">
+            <i class="fas fa-cog me-2"></i>Painel Administrativo
+        </h2>
+        <p class="text-center text-muted">Gerenciamento do sistema</p>
+    </div>
+</div>
+
+<!-- Cards de Estatísticas Admin -->
+<div class="row mb-4">
+    <div class="col-md-3 col-sm-6">
+        <div class="stats-card">
+            <div class="stats-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <h3 class="mb-1">{{ users|length }}</h3>
+            <p class="text-muted mb-0">Usuários Totais</p>
+        </div>
+    </div>
+    
+    <div class="col-md-3 col-sm-6">
+        <div class="stats-card">
+            <div class="stats-icon">
+                <i class="fas fa-key"></i>
+            </div>
+            <h3 class="mb-1">{{ product_keys|length }}</h3>
+            <p class="text-muted mb-0">Product Keys</p>
+        </div>
+    </div>
+    
+    <div class="col-md-3 col-sm-6">
+        <div class="stats-card">
+            <div class="stats-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h3 class="mb-1">{{ product_keys|selectattr('user_id')|list|length }}</h3>
+            <p class="text-muted mb-0">Keys Ativadas</p>
+        </div>
+    </div>
+    
+    <div class="col-md-3 col-sm-6">
+        <div class="stats-card">
+            <div class="stats-icon">
+                <i class="fas fa-database"></i>
+            </div>
+            <h3 class="mb-1">{% if database_config %}1{% else %}0{% endif %}</h3>
+            <p class="text-muted mb-0">Banco Ativo</p>
+        </div>
+    </div>
+</div>
+
+<!-- Gerenciamento de Banco de Dados -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-database me-2"></i>Gerenciamento de Banco de Dados
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if database_config %}
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <strong>Banco ativo:</strong> {{ database_config.database_path }}
+                    <br><small class="text-muted">Carregado em: {{ database_config.uploaded_at.strftime('%d/%m/%Y às %H:%M') }}</small>
+                </div>
+                {% else %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Nenhum banco configurado.</strong> O sistema está usando o banco de teste padrão.
+                </div>
+                {% endif %}
+                
+                <div class="row">
+                    <div class="col-md-8">
+                        <form id="uploadDatabaseForm" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label for="databaseFile" class="form-label">
+                                    <i class="fas fa-file-upload me-1"></i>Selecionar Banco de Dados (.db)
+                                </label>
+                                <input type="file" class="form-control" id="databaseFile" 
+                                       name="database" accept=".db" required>
+                                <div class="form-text">
+                                    Selecione um arquivo SQLite (.db) com a estrutura correta
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Ações:</label>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" id="uploadBtn">
+                                <i class="fas fa-upload me-2"></i>Carregar Banco
+                            </button>
+                            <button class="btn btn-outline-info" id="openExplorerBtn">
+                                <i class="fas fa-folder-open me-2"></i>Abrir Explorer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Geração de Product Keys -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-key me-2"></i>Gerar Product Keys
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="generateKeysForm">
+                    <div class="mb-3">
+                        <label for="leadCount" class="form-label">Quantidade de Leads:</label>
+                        <select class="form-select" id="leadCount" name="lead_count" required>
+                            <option value="1000">1.000 Leads</option>
+                            <option value="2000">2.000 Leads</option>
+                            <option value="10000">10.000 Leads</option>
+                            <option value="50000">50.000 Leads</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="keyQuantity" class="form-label">Quantidade de Keys:</label>
+                        <input type="number" class="form-control" id="keyQuantity" 
+                               name="quantity" min="1" max="100" value="1" required>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-plus me-2"></i>Gerar Keys
+                        </button>
+                    </div>
+                </form>
+                
+                <div id="generatedKeys" class="mt-4" style="display: none;">
+                    <h6>Keys Geradas:</h6>
+                    <div class="border rounded p-3 bg-light">
+                        <code id="keysList"></code>
+                    </div>
+                    <button class="btn btn-sm btn-outline-primary mt-2" id="copyKeysBtn">
+                        <i class="fas fa-copy me-1"></i>Copiar Keys
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Lista de Product Keys -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-list me-2"></i>Product Keys Recentes
+                </h5>
+            </div>
+            <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                {% if product_keys %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Key</th>
+                                    <th>Leads</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for key in product_keys[-10:] %}
+                                <tr>
+                                    <td>
+                                        <code class="small">{{ key.key_value[:8] }}...</code>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ key.total_leads }}</span>
+                                    </td>
+                                    <td>
+                                        {% if key.user_id %}
+                                            <span class="badge bg-success">Ativada</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">Disponível</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted py-3">
+                        <i class="fas fa-key fa-2x mb-2"></i>
+                        <p>Nenhuma product key gerada</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gerenciamento de Usuários -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-users me-2"></i>Usuários do Sistema
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if users %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nome de Usuário</th>
+                                <th>Email</th>
+                                <th>Tipo</th>
+                                <th>Leads Restantes</th>
+                                <th>Cadastro</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr>
+                                <td>{{ user.id }}</td>
+                                <td>
+                                    <strong>{{ user.username }}</strong>
+                                    {% if user.is_admin %}
+                                        <span class="badge bg-danger ms-1">Admin</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ user.email }}</td>
+                                <td>
+                                    {% if user.is_admin %}
+                                        <span class="badge bg-danger">Administrador</span>
+                                    {% else %}
+                                        <span class="badge bg-primary">Usuário</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% set user_key = product_keys|selectattr('user_id', 'equalto', user.id)|first %}
+                                    {% if user_key %}
+                                        <div class="d-flex align-items-center">
+                                            <span class="badge bg-info me-2">{{ user_key.remaining_leads }}</span>
+                                            <div class="progress flex-grow-1" style="height: 8px;">
+                                                {% set percentage = (user_key.remaining_leads / user_key.total_leads * 100) %}
+                                                <div class="progress-bar bg-primary" style="width: {{ percentage }}%"></div>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">de {{ user_key.total_leads }}</small>
+                                    {% else %}
+                                        <span class="text-muted">Sem product key</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small>{{ user.created_at.strftime('%d/%m/%Y') }}</small>
+                                </td>
+                                <td>
+                                    {% if not user.is_admin %}
+                                    <button class="btn btn-sm btn-outline-warning reset-leads-btn" 
+                                            data-user-id="{{ user.id }}">
+                                        <i class="fas fa-redo me-1"></i>Reset Leads
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-users fa-3x mb-3"></i>
+                    <p>Nenhum usuário cadastrado</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para abrir explorer -->
+<div class="modal fade" id="explorerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-folder-open me-2"></i>Seleção de Arquivo
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Clique no botão abaixo para abrir o explorador de arquivos e selecionar o banco de dados:</p>
+                <div class="d-grid">
+                    <input type="file" id="explorerFileInput" accept=".db" style="display: none;">
+                    <button class="btn btn-primary" id="openFileDialog">
+                        <i class="fas fa-folder-open me-2"></i>Abrir Explorador de Arquivos
+                    </button>
+                </div>
+                <div class="mt-3" id="selectedFileInfo" style="display: none;">
+                    <div class="alert alert-info">
+                        <i class="fas fa-file me-2"></i>
+                        Arquivo selecionado: <strong id="selectedFileName"></strong>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                <button type="button" class="btn btn-success" id="uploadSelectedFile" style="display: none;">
+                    <i class="fas fa-upload me-1"></i>Carregar Arquivo
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        setupEventListeners();
+    });
+    
+    function setupEventListeners() {
+        // Geração de product keys
+        document.getElementById('generateKeysForm').addEventListener('submit', generateKeys);
+        
+        // Upload de banco de dados
+        document.getElementById('uploadBtn').addEventListener('click', uploadDatabase);
+        
+        // Abrir explorer
+        document.getElementById('openExplorerBtn').addEventListener('click', function() {
+            const modal = new bootstrap.Modal(document.getElementById('explorerModal'));
+            modal.show();
+        });
+        
+        // File dialog
+        document.getElementById('openFileDialog').addEventListener('click', function() {
+            document.getElementById('explorerFileInput').click();
+        });
+        
+        document.getElementById('explorerFileInput').addEventListener('change', function() {
+            if (this.files.length > 0) {
+                const file = this.files[0];
+                document.getElementById('selectedFileName').textContent = file.name;
+                document.getElementById('selectedFileInfo').style.display = 'block';
+                document.getElementById('uploadSelectedFile').style.display = 'block';
+            }
+        });
+        
+        document.getElementById('uploadSelectedFile').addEventListener('click', function() {
+            const fileInput = document.getElementById('explorerFileInput');
+            const mainFileInput = document.getElementById('databaseFile');
+            
+            if (fileInput.files.length > 0) {
+                // Transferir arquivo para o input principal
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(fileInput.files[0]);
+                mainFileInput.files = dataTransfer.files;
+                
+                // Fechar modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('explorerModal'));
+                modal.hide();
+                
+                // Fazer upload
+                uploadDatabase();
+            }
+        });
+        
+        // Copiar keys
+        document.getElementById('copyKeysBtn').addEventListener('click', copyKeys);
+        
+        // Reset de leads
+        document.querySelectorAll('.reset-leads-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                if (confirmAction('Tem certeza que deseja resetar os leads deste usuário?')) {
+                    resetUserLeads(this.getAttribute('data-user-id'));
+                }
+            });
+        });
+    }
+    
+    function generateKeys(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(e.target);
+        const btn = e.target.querySelector('button[type="submit"]');
+        const originalText = showLoading(btn);
+        
+        fetch('/admin/generate-keys', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayGeneratedKeys(data.keys);
+                showNotification(`${data.keys.length} product keys geradas com sucesso!`, 'success');
+                
+                // Recarregar página após 3 segundos
+                setTimeout(() => location.reload(), 3000);
+            } else {
+                showNotification('Erro ao gerar product keys', 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            showNotification('Erro ao gerar product keys', 'danger');
+        })
+        .finally(() => {
+            hideLoading(btn, originalText);
+        });
+    }
+    
+    function displayGeneratedKeys(keys) {
+        const container = document.getElementById('generatedKeys');
+        const keysList = document.getElementById('keysList');
+        
+        keysList.textContent = keys.join('\n');
+        container.style.display = 'block';
+    }
+    
+    function copyKeys() {
+        const keysList = document.getElementById('keysList');
+        navigator.clipboard.writeText(keysList.textContent)
+        .then(() => {
+            showNotification('Keys copiadas para a área de transferência!', 'success');
+        })
+        .catch(error => {
+            console.error('Erro ao copiar:', error);
+            showNotification('Erro ao copiar keys', 'danger');
+        });
+    }
+    
+    function uploadDatabase() {
+        const fileInput = document.getElementById('databaseFile');
+        
+        if (!fileInput.files || fileInput.files.length === 0) {
+            showNotification('Selecione um arquivo de banco de dados', 'warning');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('database', fileInput.files[0]);
+        
+        const btn = document.getElementById('uploadBtn');
+        const originalText = showLoading(btn);
+        
+        fetch('/admin/upload-database', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(data.message, 'success');
+                setTimeout(() => location.reload(), 2000);
+            } else {
+                showNotification(data.error || 'Erro ao carregar banco de dados', 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            showNotification('Erro ao carregar banco de dados', 'danger');
+        })
+        .finally(() => {
+            hideLoading(btn, originalText);
+        });
+    }
+    
+    function resetUserLeads(userId) {
+        fetch('/admin/reset-leads', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                user_id: userId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Leads resetados com sucesso!', 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showNotification('Erro ao resetar leads', 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            showNotification('Erro ao resetar leads', 'danger');
+        });
+    }
+</script>
+{% endblock %}

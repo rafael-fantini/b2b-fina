@@ -1,0 +1,550 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Sistema B2B{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="text-center mb-0">
+            <i class="fas fa-chart-line me-2"></i>Dashboard B2B
+        </h2>
+        <p class="text-center text-muted">Bem-vindo, {{ session.username }}!</p>
+    </div>
+</div>
+
+<!-- Cards de Estatísticas -->
+<div class="row mb-4">
+    <div class="col-md-3 col-sm-6">
+        <div class="stats-card">
+            <div class="stats-icon">
+                <i class="fas fa-database"></i>
+            </div>
+            <h3 class="mb-1" id="leadsRemaining">0</h3>
+            <p class="text-muted mb-0">Leads Restantes</p>
+        </div>
+    </div>
+    
+    <div class="col-md-3 col-sm-6">
+        <div class="stats-card">
+            <div class="stats-icon">
+                <i class="fas fa-download"></i>
+            </div>
+            <h3 class="mb-1" id="totalExports">0</h3>
+            <p class="text-muted mb-0">Exportações Hoje</p>
+        </div>
+    </div>
+    
+    <div class="col-md-3 col-sm-6">
+        <div class="stats-card">
+            <div class="stats-icon">
+                <i class="fas fa-building"></i>
+            </div>
+            <h3 class="mb-1" id="totalCompanies">0</h3>
+            <p class="text-muted mb-0">Empresas no Banco</p>
+        </div>
+    </div>
+    
+    <div class="col-md-3 col-sm-6">
+        <div class="stats-card">
+            <div class="stats-icon">
+                <i class="fas fa-filter"></i>
+            </div>
+            <h3 class="mb-1" id="savedFilters">0</h3>
+            <p class="text-muted mb-0">Filtros Salvos</p>
+        </div>
+    </div>
+</div>
+
+<!-- Ações Rápidas -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-bolt me-2"></i>Ações Rápidas
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="d-grid">
+                            <a href="{{ url_for('filter_page') }}" class="btn btn-primary btn-lg">
+                                <i class="fas fa-filter me-2"></i>Filtrar e Exportar
+                            </a>
+                        </div>
+                        <small class="text-muted d-block text-center mt-2">
+                            Acesse o sistema de filtros avançados
+                        </small>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <div class="d-grid">
+                            <button class="btn btn-success btn-lg" id="quickExportBtn">
+                                <i class="fas fa-download me-2"></i>Export Rápido
+                            </button>
+                        </div>
+                        <small class="text-muted d-block text-center mt-2">
+                            Exportar todas as empresas ativas
+                        </small>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <div class="d-grid">
+                            <button class="btn btn-info btn-lg" id="statsBtn">
+                                <i class="fas fa-chart-bar me-2"></i>Estatísticas
+                            </button>
+                        </div>
+                        <small class="text-muted d-block text-center mt-2">
+                            Ver distribuição dos dados
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráficos e Estatísticas -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-chart-pie me-2"></i>Distribuição por Estado
+                </h6>
+            </div>
+            <div class="card-body">
+                <canvas id="stateChart" style="max-height: 300px;"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>Optantes do Simples Nacional
+                </h6>
+            </div>
+            <div class="card-body">
+                <canvas id="simplesChart" style="max-height: 300px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros Recentes -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-bookmark me-2"></i>Filtros Salvos
+                </h6>
+            </div>
+            <div class="card-body">
+                <div id="recentFilters">
+                    <div class="text-center text-muted py-3">
+                        <i class="fas fa-bookmark fa-2x mb-2"></i>
+                        <p>Nenhum filtro salvo</p>
+                        <a href="{{ url_for('filter_page') }}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-plus me-1"></i>Criar Primeiro Filtro
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Informações da Conta
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <strong>Usuário:</strong>
+                    </div>
+                    <div class="col-6">
+                        {{ session.username }}
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-6">
+                        <strong>Plano:</strong>
+                    </div>
+                    <div class="col-6">
+                        <span id="planType">Carregando...</span>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-6">
+                        <strong>Status:</strong>
+                    </div>
+                    <div class="col-6">
+                        <span class="badge bg-success">Ativo</span>
+                    </div>
+                </div>
+                
+                <!-- Progresso dos Leads -->
+                <div class="mt-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="text-muted">Uso de Leads</small>
+                        <small class="text-muted" id="leadsProgress">0%</small>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-primary" role="progressbar" 
+                             style="width: 0%" id="leadsProgressBar"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Card para Adicionar Product Key -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-plus-circle me-2"></i>Adicionar Mais Leads
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">Adicione uma nova Product Key para aumentar seus leads:</p>
+                
+                <div class="mb-3">
+                    <label for="newProductKey" class="form-label">
+                        <i class="fas fa-key me-1"></i>Product Key:
+                    </label>
+                    <input type="text" class="form-control" id="newProductKey" 
+                           placeholder="Digite sua nova Product Key" maxlength="16" 
+                           style="text-transform: uppercase;">
+                </div>
+                
+                <div class="d-grid">
+                    <button class="btn btn-success" id="addKeyBtn">
+                        <i class="fas fa-plus me-2"></i>Adicionar Leads
+                    </button>
+                </div>
+                
+                <div class="mt-3">
+                    <div class="alert alert-info py-2">
+                        <small>
+                            <i class="fas fa-lightbulb me-1"></i>
+                            <strong>Dica:</strong> Acesse o painel admin para gerar Product Keys de teste
+                        </small>
+                    </div>
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Os leads serão somados ao seu plano atual automaticamente
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Export Rápido -->
+<div class="modal fade" id="quickExportModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-download me-2"></i>Export Rápido
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Exportar todas as empresas com situação cadastral ativa?</p>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Esta ação pode consumir muitos leads dependendo da quantidade de registros.
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Formato:</label>
+                    <div class="btn-group w-100" role="group">
+                        <input type="radio" class="btn-check" name="quickFormat" id="quickCsv" value="csv" checked>
+                        <label class="btn btn-outline-primary" for="quickCsv">CSV</label>
+                        
+                        <input type="radio" class="btn-check" name="quickFormat" id="quickXlsx" value="xlsx">
+                        <label class="btn btn-outline-success" for="quickXlsx">Excel</label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" id="confirmQuickExport">
+                    <i class="fas fa-download me-1"></i>Exportar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let stateChart, simplesChart;
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        loadDashboardData();
+        setupEventListeners();
+        initializeCharts();
+    });
+    
+    function loadDashboardData() {
+        // Carregar estatísticas do usuário
+        fetch('/api/dashboard-stats')
+        .then(response => response.json())
+        .then(data => {
+            updateStats(data);
+            updateCharts(data);
+        })
+        .catch(error => {
+            console.error('Erro ao carregar dashboard:', error);
+        });
+    }
+    
+    function updateStats(data) {
+        document.getElementById('leadsRemaining').textContent = data.leads_remaining || 0;
+        document.getElementById('totalExports').textContent = data.exports_today || 0;
+        document.getElementById('totalCompanies').textContent = data.total_companies || 0;
+        document.getElementById('savedFilters').textContent = data.saved_filters || 0;
+        
+        // Atualizar informações do plano
+        const planType = data.plan_type || 'Básico';
+        const totalLeads = data.total_leads || 1000;
+        const usedLeads = totalLeads - (data.leads_remaining || 0);
+        const percentage = Math.round((usedLeads / totalLeads) * 100);
+        
+        document.getElementById('planType').textContent = `${planType} (${totalLeads} leads)`;
+        document.getElementById('leadsProgress').textContent = `${percentage}%`;
+        document.getElementById('leadsProgressBar').style.width = `${percentage}%`;
+        
+        // Mudar cor da barra conforme o uso
+        const progressBar = document.getElementById('leadsProgressBar');
+        if (percentage > 80) {
+            progressBar.className = 'progress-bar bg-danger';
+        } else if (percentage > 60) {
+            progressBar.className = 'progress-bar bg-warning';
+        } else {
+            progressBar.className = 'progress-bar bg-success';
+        }
+    }
+    
+    function setupEventListeners() {
+        // Export rápido
+        document.getElementById('quickExportBtn').addEventListener('click', function() {
+            const modal = new bootstrap.Modal(document.getElementById('quickExportModal'));
+            modal.show();
+        });
+        
+        document.getElementById('confirmQuickExport').addEventListener('click', performQuickExport);
+        
+        // Botão de estatísticas
+        document.getElementById('statsBtn').addEventListener('click', function() {
+            // Rolar para os gráficos
+            document.querySelector('#stateChart').scrollIntoView({ behavior: 'smooth' });
+        });
+        
+        // Adicionar Product Key
+        document.getElementById('addKeyBtn').addEventListener('click', addProductKey);
+        
+        // Formatação automática da Product Key
+        const newKeyInput = document.getElementById('newProductKey');
+        newKeyInput.addEventListener('input', function() {
+            this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        });
+        
+        // Enter para adicionar key
+        newKeyInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addProductKey();
+            }
+        });
+    }
+    
+    function initializeCharts() {
+        // Gráfico de distribuição por estado
+        const stateCtx = document.getElementById('stateChart').getContext('2d');
+        stateChart = new Chart(stateCtx, {
+            type: 'doughnut',
+            data: {
+                labels: [],
+                datasets: [{
+                    data: [],
+                    backgroundColor: [
+                        '#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6',
+                        '#1abc9c', '#34495e', '#f1c40f', '#e67e22', '#95a5a6'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+        
+        // Gráfico de optantes do simples
+        const simplesCtx = document.getElementById('simplesChart').getContext('2d');
+        simplesChart = new Chart(simplesCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Optante', 'Não Optante'],
+                datasets: [{
+                    label: 'Empresas',
+                    data: [0, 0],
+                    backgroundColor: ['#27ae60', '#e74c3c']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+    
+    function updateCharts(data) {
+        // Atualizar gráfico de estados
+        if (data.state_distribution) {
+            stateChart.data.labels = Object.keys(data.state_distribution);
+            stateChart.data.datasets[0].data = Object.values(data.state_distribution);
+            stateChart.update();
+        }
+        
+        // Atualizar gráfico do simples
+        if (data.simples_distribution) {
+            simplesChart.data.datasets[0].data = [
+                data.simples_distribution.optante || 0,
+                data.simples_distribution.nao_optante || 0
+            ];
+            simplesChart.update();
+        }
+    }
+    
+    function performQuickExport() {
+        const format = document.querySelector('input[name="quickFormat"]:checked').value;
+        const btn = document.getElementById('confirmQuickExport');
+        const originalText = showLoading(btn);
+        
+        fetch('/api/quick-export', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                format: format,
+                filter: 'active_companies'
+            })
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.blob();
+            }
+            throw new Error('Erro na exportação');
+        })
+        .then(blob => {
+            // Download do arquivo
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `empresas_ativas_${new Date().toISOString().slice(0,10)}.${format}`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            showNotification('Export realizado com sucesso!', 'success');
+            
+            // Fechar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('quickExportModal'));
+            modal.hide();
+            
+            // Recarregar dados
+            loadDashboardData();
+        })
+        .catch(error => {
+            console.error('Erro no export:', error);
+            showNotification('Erro ao exportar dados', 'danger');
+        })
+        .finally(() => {
+            hideLoading(btn, originalText);
+        });
+    }
+    
+    function addProductKey() {
+        const keyInput = document.getElementById('newProductKey');
+        const productKey = keyInput.value.trim();
+        
+        if (!productKey) {
+            showNotification('Digite uma Product Key válida', 'warning');
+            keyInput.focus();
+            return;
+        }
+        
+        if (productKey.length !== 16) {
+            showNotification('Product Key deve ter 16 caracteres', 'warning');
+            keyInput.focus();
+            return;
+        }
+        
+        const btn = document.getElementById('addKeyBtn');
+        const originalText = showLoading(btn);
+        
+        fetch('/add-product-key', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                product_key: productKey
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(data.message, 'success');
+                keyInput.value = '';
+                
+                // Atualizar dados do dashboard
+                loadDashboardData();
+                
+                // Destacar a área de leads
+                const leadsCard = document.querySelector('.stats-card');
+                leadsCard.style.transform = 'scale(1.05)';
+                leadsCard.style.transition = 'transform 0.3s ease';
+                setTimeout(() => {
+                    leadsCard.style.transform = 'scale(1)';
+                }, 1000);
+                
+            } else {
+                showNotification(data.error || 'Erro ao adicionar Product Key', 'danger');
+                keyInput.focus();
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            showNotification('Erro ao adicionar Product Key', 'danger');
+        })
+        .finally(() => {
+            hideLoading(btn, originalText);
+        });
+    }
+</script>
+{% endblock %}
