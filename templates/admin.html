@@ -147,11 +147,18 @@
                 <div id="generatedKeys" class="mt-4" style="display: none;">
                     <h6>Keys Geradas:</h6>
                     <div class="border rounded p-3 bg-light">
-                        <code id="keysList"></code>
+                        <div id="keysList" class="d-flex flex-wrap gap-2">
+                            <!-- Keys serão inseridas aqui como badges clicáveis -->
+                        </div>
                     </div>
-                    <button class="btn btn-sm btn-outline-primary mt-2" id="copyKeysBtn">
-                        <i class="fas fa-copy me-1"></i>Copiar Keys
-                    </button>
+                    <div class="mt-2 d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-primary" id="copyKeysBtn">
+                            <i class="fas fa-copy me-1"></i>Copiar Todas
+                        </button>
+                        <button class="btn btn-sm btn-outline-info" id="selectAllKeysBtn">
+                            <i class="fas fa-check-square me-1"></i>Selecionar Todas
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -180,7 +187,14 @@
                                 {% for key in product_keys[-10:] %}
                                 <tr>
                                     <td>
-                                        <code class="small">{{ key.key_value[:8] }}...</code>
+                                        <code class="small product-key-preview" 
+                                              data-full-key="{{ key.key_value }}"
+                                              data-bs-toggle="tooltip" 
+                                              data-bs-placement="top" 
+                                              title="Clique para ver a key completa"
+                                              style="cursor: pointer; user-select: none;">
+                                            {{ key.key_value[:8] }}...
+                                        </code>
                                     </td>
                                     <td>
                                         <span class="badge bg-info">{{ key.total_leads }}</span>
@@ -326,6 +340,51 @@
         </div>
     </div>
 </div>
+
+<!-- Modal para mostrar Product Key completa -->
+<div class="modal fade" id="productKeyModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-key me-2"></i>Product Key Completa
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Product Key:</strong>
+                </div>
+                
+                <div class="text-center">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h4 class="font-monospace text-primary mb-3" id="fullProductKey">
+                                <!-- Key será inserida aqui -->
+                            </h4>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-primary" id="copyKeyBtn">
+                                    <i class="fas fa-copy me-2"></i>Copiar Product Key
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <i class="fas fa-shield-alt me-1"></i>
+                        Mantenha esta Product Key em segurança e compartilhe apenas com usuários autorizados.
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -391,6 +450,23 @@
                 }
             });
         });
+        
+        // Mostrar Product Key completa ao clicar
+        document.querySelectorAll('.product-key-preview').forEach(element => {
+            element.addEventListener('click', function() {
+                const fullKey = this.getAttribute('data-full-key');
+                showProductKeyModal(fullKey);
+            });
+        });
+        
+        // Copiar Product Key do modal
+        document.getElementById('copyKeyBtn').addEventListener('click', copyProductKey);
+        
+        // Inicializar tooltips
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
     }
     
     function generateKeys(e) {
@@ -429,20 +505,99 @@
         const container = document.getElementById('generatedKeys');
         const keysList = document.getElementById('keysList');
         
-        keysList.textContent = keys.join('\n');
+        // Limpar lista anterior
+        keysList.innerHTML = '';
+        
+        // Criar badges clicáveis para cada key
+        keys.forEach((key, index) => {
+            const keyBadge = document.createElement('span');
+            keyBadge.className = 'badge bg-primary product-key-badge';
+            keyBadge.style.cursor = 'pointer';
+            keyBadge.style.fontSize = '0.9rem';
+            keyBadge.style.padding = '0.5rem 0.75rem';
+            keyBadge.style.fontFamily = 'monospace';
+            keyBadge.textContent = `${key.substring(0, 8)}...`;
+            keyBadge.setAttribute('data-full-key', key);
+            keyBadge.setAttribute('data-bs-toggle', 'tooltip');
+            keyBadge.setAttribute('data-bs-placement', 'top');
+            keyBadge.setAttribute('title', 'Clique para ver a key completa');
+            
+            // Adicionar evento de clique
+            keyBadge.addEventListener('click', function() {
+                showProductKeyModal(key);
+            });
+            
+            keysList.appendChild(keyBadge);
+        });
+        
+        // Armazenar keys para função de copiar
+        window.currentGeneratedKeys = keys;
         container.style.display = 'block';
+        
+        // Inicializar tooltips para as novas badges
+        const tooltips = keysList.querySelectorAll('[data-bs-toggle="tooltip"]');
+        tooltips.forEach(tooltip => {
+            new bootstrap.Tooltip(tooltip);
+        });
     }
     
     function copyKeys() {
-        const keysList = document.getElementById('keysList');
-        navigator.clipboard.writeText(keysList.textContent)
-        .then(() => {
-            showNotification('Keys copiadas para a área de transferência!', 'success');
-        })
-        .catch(error => {
-            console.error('Erro ao copiar:', error);
+        if (window.currentGeneratedKeys && window.currentGeneratedKeys.length > 0) {
+            const keysText = window.currentGeneratedKeys.join('\n');
+            
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(keysText)
+                .then(() => {
+                    showNotification(`${window.currentGeneratedKeys.length} Product Keys copiadas!`, 'success');
+                    updateCopyKeysButton(true);
+                })
+                .catch(error => {
+                    console.error('Erro ao copiar:', error);
+                    fallbackCopyKeys(keysText);
+                });
+            } else {
+                fallbackCopyKeys(keysText);
+            }
+        } else {
+            showNotification('Nenhuma key para copiar', 'warning');
+        }
+    }
+    
+    function fallbackCopyKeys(text) {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        
+        try {
+            document.execCommand('copy');
+            showNotification(`${window.currentGeneratedKeys.length} Product Keys copiadas!`, 'success');
+            updateCopyKeysButton(true);
+        } catch (err) {
+            console.error('Erro ao copiar:', err);
             showNotification('Erro ao copiar keys', 'danger');
-        });
+        }
+        
+        document.body.removeChild(textarea);
+    }
+    
+    function updateCopyKeysButton(copied) {
+        const copyBtn = document.getElementById('copyKeysBtn');
+        const originalHtml = copyBtn.innerHTML;
+        
+        if (copied) {
+            copyBtn.innerHTML = '<i class="fas fa-check me-1"></i>Copiadas!';
+            copyBtn.classList.remove('btn-outline-primary');
+            copyBtn.classList.add('btn-success');
+            
+            setTimeout(() => {
+                copyBtn.innerHTML = originalHtml;
+                copyBtn.classList.remove('btn-success');
+                copyBtn.classList.add('btn-outline-primary');
+            }, 3000);
+        }
     }
     
     function uploadDatabase() {
@@ -504,6 +659,70 @@
             console.error('Erro:', error);
             showNotification('Erro ao resetar leads', 'danger');
         });
+    }
+    
+    function showProductKeyModal(fullKey) {
+        document.getElementById('fullProductKey').textContent = fullKey;
+        const modal = new bootstrap.Modal(document.getElementById('productKeyModal'));
+        modal.show();
+    }
+    
+    function copyProductKey() {
+        const fullKey = document.getElementById('fullProductKey').textContent;
+        
+        // Método moderno para copiar
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(fullKey)
+            .then(() => {
+                showNotification('Product Key copiada para a área de transferência!', 'success');
+                updateCopyButton(true);
+            })
+            .catch(err => {
+                console.error('Erro ao copiar:', err);
+                fallbackCopy(fullKey);
+            });
+        } else {
+            // Fallback para navegadores mais antigos
+            fallbackCopy(fullKey);
+        }
+    }
+    
+    function fallbackCopy(text) {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        textarea.setSelectionRange(0, 99999);
+        
+        try {
+            document.execCommand('copy');
+            showNotification('Product Key copiada para a área de transferência!', 'success');
+            updateCopyButton(true);
+        } catch (err) {
+            console.error('Erro ao copiar:', err);
+            showNotification('Erro ao copiar Product Key', 'danger');
+        }
+        
+        document.body.removeChild(textarea);
+    }
+    
+    function updateCopyButton(copied) {
+        const copyBtn = document.getElementById('copyKeyBtn');
+        const originalHtml = copyBtn.innerHTML;
+        
+        if (copied) {
+            copyBtn.innerHTML = '<i class="fas fa-check me-2"></i>Copiado!';
+            copyBtn.classList.remove('btn-outline-primary');
+            copyBtn.classList.add('btn-success');
+            
+            setTimeout(() => {
+                copyBtn.innerHTML = originalHtml;
+                copyBtn.classList.remove('btn-success');
+                copyBtn.classList.add('btn-outline-primary');
+            }, 2000);
+        }
     }
 </script>
 {% endblock %}
