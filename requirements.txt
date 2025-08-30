@@ -24,5 +24,9 @@ Faker==19.6.2
 # Production server
 gunicorn==21.2.0
 
+# Google Cloud SQL
+PyMySQL==1.1.0
+sqlalchemy==2.0.21
+
 # Additional utilities
 python-dotenv==1.0.0
