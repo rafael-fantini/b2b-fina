@@ -73,3 +73,14 @@ yarn-error.log*
 
 # System
 sistema.db
+
+# Environment variables
+.env
+.env.*
+
+# Google Cloud
+.gcloudignore
+
+# Firebase
+.firebase/
+firebase-debug.log
